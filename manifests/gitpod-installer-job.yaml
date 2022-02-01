@@ -64,6 +64,25 @@ spec:
               echo "Gitpod: Inject the Replicated variables into the config"
               yq e -i '.domain = "{{repl ConfigOption "domain" }}"' "${CONFIG_FILE}"
 
+              if [ '{{repl and (ConfigOptionEquals "db_incluster" "0") (ConfigOptionEquals "db_cloudsql_enabled" "1") }}' = "true" ];
+              then
+                echo "Gitpod: configuring CloudSQLProxy"
+
+                yq e -i ".database.inCluster = false" "${CONFIG_FILE}"
+                yq e -i ".database.cloudSQL.instance = \"{{repl ConfigOption "db_cloudsql_instance" }}\"" "${CONFIG_FILE}"
+                yq e -i ".database.cloudSQL.serviceAccount.kind = \"secret\"" "${CONFIG_FILE}"
+                yq e -i ".database.cloudSQL.serviceAccount.name = \"cloudsql\"" "${CONFIG_FILE}"
+              fi
+
+              if [ '{{repl and (ConfigOptionEquals "db_incluster" "0") (ConfigOptionEquals "db_cloudsql_enabled" "0") }}' = "true" ];
+              then
+                echo "Gitpod: configuring external database"
+
+                yq e -i ".database.inCluster = false" "${CONFIG_FILE}"
+                yq e -i ".database.external.certificate.kind = \"secret\"" "${CONFIG_FILE}"
+                yq e -i ".database.external.certificate.name = \"database\"" "${CONFIG_FILE}"
+              fi
+
               echo "Gitpod: Generate the Kubernetes objects and apply"
               /app/installer render -c "${CONFIG_FILE}" --namespace {{repl Namespace }} | kubectl apply -f -
 

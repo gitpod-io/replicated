@@ -13,3 +13,72 @@ spec:
           help_text: This will be the URL that you use to access your Gitpod instance. This should be in the format "gitpod.domain.com".
           type: text
           required: true
+
+    - name: database
+      title: Database
+      description: Gitpod requires an instance of MySQL 5.7 for data storage. This can either be an in-cluster or external database.
+      items:
+        - name: db_incluster
+          title: Use MySQL in-cluster
+          type: bool
+          default: "1"
+          help_text: You may either use an in-cluster database or configure your own external database for better performance. This database must be accessible from your Kubernetes cluster.
+          recommended: false
+
+        - name: db_cloudsql_enabled
+          title: Use Google Cloud SQL Proxy
+          when: '{{repl (ConfigOptionEquals "db_incluster" "0") }}'
+          type: bool
+          default: "0"
+          help_text: "Gitpod natively supports [Google Cloud SQL Proxy](https://cloud.google.com/sql/docs/mysql/sql-proxy) to secure the connection. If this is not used, you will need to ensure that the database route is secured. **NB.** this only works with GCP provided databases."
+
+        - name: db_cloudsql_instance
+          title: CloudSQL connection name
+          type: text
+          when: '{{repl and (ConfigOptionEquals "db_incluster" "0") (ConfigOptionEquals "db_cloudsql_enabled" "1") }}'
+          required: true
+          help_text: The CloudSQL connection name. This will be in the format "<project>:<region>:<instance-name>".
+
+        - name: db_encryption_keys
+          title: Encryption keys
+          type: text
+          hidden: true
+          required: true
+          value: '[{"name":"general","version":1,"primary":true,"material":"4uGh1q8y2DYryJwrVMHs0kWXJlqvHWWt/KJuNi04edI="}]'
+
+        - name: db_host
+          title: Host
+          type: text
+          when: '{{repl and (ConfigOptionEquals "db_incluster" "0") (ConfigOptionEquals "db_cloudsql_enabled" "0") }}'
+          required: true
+          help_text: The host of your database. This can be an IP address or a URL.
+
+        - name: db_username
+          title: Username
+          when: '{{repl (ConfigOptionEquals "db_incluster" "0") }}'
+          type: text
+          value: gitpod
+          required: true
+          help_text: The username for your database.
+
+        - name: db_password
+          title: Password
+          when: '{{repl (ConfigOptionEquals "db_incluster" "0") }}'
+          type: password
+          required: true
+          help_text: The password for your database.
+
+        - name: db_port
+          title: Port
+          type: text
+          when: '{{repl and (ConfigOptionEquals "db_incluster" "0") (ConfigOptionEquals "db_cloudsql_enabled" "0") }}'
+          value: "3306"
+          required: true
+          help_text: The port for your database.
+
+        - name: db_gcp_credentials
+          title: GCP service account key
+          when: '{{repl and (ConfigOptionEquals "db_incluster" "0") (ConfigOptionEquals "db_cloudsql_enabled" "1") }}'
+          type: file
+          required: true
+          help_text: Download a [service account key](https://cloud.google.com/iam/docs/creating-managing-service-account-keys) with the `roles/cloudsql.client` role attached.
