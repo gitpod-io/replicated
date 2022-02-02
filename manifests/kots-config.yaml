@@ -148,3 +148,96 @@ spec:
           type: file
           required: true
           help_text: Download a [service account key](https://cloud.google.com/iam/docs/creating-managing-service-account-keys) with the `roles/cloudsql.client` role attached.
+
+    - name: storage
+      title: Object storage
+      description: Gitpod requires object storage to store workspace data. This can either be in-cluster or an external S3 (AWS), Azure or GCP instance.
+      items:
+        - name: store_provider
+          title: Storage provider
+          type: select_one
+          default: incluster
+          help_text: You may either use in-cluster object storage or configure your own external object storage for better performance. This must be accessible from your Kubernetes cluster.
+          items:
+            - name: incluster
+              title: In-cluster
+            - name: azure
+              title: Azure
+            - name: gcp
+              title: GCP
+            - name: s3
+              title: S3
+
+        # Azure help_text
+        - name: store_region
+          title: Storage region
+          type: text
+          required: true
+          when: '{{repl (ConfigOptionEquals "store_provider" "azure") }}'
+          help_text: ID of the region where your storage exists, such as `uksouth`.
+
+        # GCP help_text
+        - name: store_region
+          title: Storage region
+          type: text
+          required: true
+          when: '{{repl (ConfigOptionEquals "store_provider" "gcp") }}'
+          help_text: ID of the region where your storage exists, such as `europe-west2`.
+
+        # S3 help_text
+        - name: store_region
+          title: Storage region
+          type: text
+          required: true
+          when: '{{repl (ConfigOptionEquals "store_provider" "s3") }}'
+          help_text: ID of the region where your storage exists, such as `eu-west-2`.
+
+        - name: store_azure_account_name
+          title: Account name
+          type: text
+          required: true
+          when: '{{repl (ConfigOptionEquals "store_provider" "azure") }}'
+          help_text: The globally-unique storage account name.
+
+        - name: store_azure_access_key
+          title: Access key
+          type: password
+          required: true
+          when: '{{repl (ConfigOptionEquals "store_provider" "azure") }}'
+          help_text: The access key for the storage account.
+
+        - name: store_gcp_project
+          title: Project ID
+          type: text
+          required: true
+          when: '{{repl (ConfigOptionEquals "store_provider" "gcp") }}'
+          help_text: The ID of your GCP project.
+
+        - name: store_gcp_credentials
+          title: Service account key
+          type: file
+          required: true
+          when: '{{repl (ConfigOptionEquals "store_provider" "gcp") }}'
+          help_text: Download a [service account key](https://cloud.google.com/iam/docs/creating-managing-service-account-keys) with the `roles/storage.admin` and `roles/storage.objectAdmin` roles attached.
+
+        - name: store_s3_endpoint
+          title: Endpoint
+          type: text
+          required: true
+          value: s3.amazonaws.com
+          when: '{{repl (ConfigOptionEquals "store_provider" "s3") }}'
+          help_text: The endpoint used to connect to the S3 storage.
+
+        - name: store_s3_access_key_id
+          title: Username
+          type: text
+          required: true
+          when: '{{repl (ConfigOptionEquals "store_provider" "s3") }}'
+          help_text: The username that has access to the S3 account. In AWS, this is an IAM user's credentials with `AmazonS3FullAccess` policy.
+
+        - name: store_s3_secret_access_key
+          title: Password
+          type: password
+          required: true
+          when: '{{repl (ConfigOptionEquals "store_provider" "s3") }}'
+          help_text: The password that has access to the S3 account. In AWS, this is an IAM user's credentials with `AmazonS3FullAccess` policy.

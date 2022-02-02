@@ -102,6 +102,40 @@ spec:
                 fi
               fi
 
+              if [ '{{repl ConfigOptionNotEquals "store_provider" "incluster" }}' = "true" ];
+              then
+                echo "Gitpod: configuring the storage"
+
+                yq e -i ".metadata.region = \"{{repl ConfigOption "store_region" }}\"" "${CONFIG_FILE}"
+                yq e -i ".objectStorage.inCluster = false" "${CONFIG_FILE}"
+
+                if [ '{{repl ConfigOptionEquals "store_provider" "azure" }}' = "true" ];
+                then
+                  echo "Gitpod: configuring storage for Azure"
+
+                  yq e -i ".objectStorage.azure.credentials.kind = \"secret\"" "${CONFIG_FILE}"
+                  yq e -i ".objectStorage.azure.credentials.name = \"storage-azure\"" "${CONFIG_FILE}"
+                fi
+
+                if [ '{{repl ConfigOptionEquals "store_provider" "gcp" }}' = "true" ];
+                then
+                  echo "Gitpod: configuring storage for GCP"
+
+                  yq e -i ".objectStorage.cloudStorage.project = \"{{repl ConfigOption "store_gcp_project" }}\"" "${CONFIG_FILE}"
+                  yq e -i ".objectStorage.cloudStorage.serviceAccount.kind = \"secret\"" "${CONFIG_FILE}"
+                  yq e -i ".objectStorage.cloudStorage.serviceAccount.name = \"storage-gcp\"" "${CONFIG_FILE}"
+                fi
+
+                if [ '{{repl ConfigOptionEquals "store_provider" "s3" }}' = "true" ];
+                then
+                  echo "Gitpod: configuring storage for S3"
+
+                  yq e -i ".objectStorage.s3.endpoint = \"{{repl ConfigOption "store_s3_endpoint" }}\"" "${CONFIG_FILE}"
+                  yq e -i ".objectStorage.s3.credentials.secret = \"secret\"" "${CONFIG_FILE}"
+                  yq e -i ".objectStorage.s3.credentials.name = \"storage-s3\"" "${CONFIG_FILE}"
+                fi
+              fi
+
               echo "Gitpod: Generate the Kubernetes objects and apply"
               /app/installer render -c "${CONFIG_FILE}" --namespace {{repl Namespace }} | kubectl apply -f -
 
