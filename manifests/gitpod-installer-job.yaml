@@ -48,9 +48,16 @@ spec:
             - mountPath: /config
               name: config
               readOnly: false
+            - mountPath: /mnt/node0
+              name: node-fs0
+              readOnly: true
           env:
             - name: CONFIG_FILE
               value: /config/config.yaml
+            - name: CONTAINERD_DIR_K3S
+              value: /run/k3s/containerd/io.containerd.runtime.v2.task/k8s.io
+            - name: CONTAINERD_SOCKET_K3S
+              value: /run/k3s/containerd/containerd.sock
           command:
             - /bin/sh
             - -c
@@ -60,6 +67,19 @@ spec:
 
               echo "Gitpod: Generate the base Installer config"
               /app/installer init > "${CONFIG_FILE}"
+
+              echo "Gitpod: auto-detecting containerd location on host machine"
+              if [ -d "${CONTAINERD_DIR_K3S}" ]; then
+                echo "Gitpod: containerd dir detected as k3s"
+
+                yq e -i '.workspace.runtime.containerdRuntimeDir = "${CONTAINERD_DIR_K3S}"' "${CONFIG_FILE}"
+              fi
+
+              if [ -d "${CONTAINERD_SOCKET_K3S}" ]; then
+                echo "Gitpod: containerd socket detected as k3s"
+
+                yq e -i '.workspace.runtime.containerdSocket = "${CONTAINERD_SOCKET_K3S}"' "${CONFIG_FILE}"
+              fi
 
               echo "Gitpod: Inject the Replicated variables into the config"
               yq e -i '.domain = "{{repl ConfigOption "domain" }}"' "${CONFIG_FILE}"
@@ -146,3 +166,7 @@ spec:
       volumes:
         - name: config
           emptyDir: {}
+        - name: node-fs0
+          hostPath:
+            path: /
+            type: Directory
