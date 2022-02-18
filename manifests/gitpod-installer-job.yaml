@@ -86,6 +86,9 @@ spec:
               yq e -i '.license.kind = "secret"' "${CONFIG_FILE}"
               yq e -i '.license.name = "gitpod-license"' "${CONFIG_FILE}"
 
+              # TODO
+              yq e -i '.workspace.runtime.fsShiftMethod = "fuse"' "${CONFIG_FILE}"
+
               if [ '{{repl and (ConfigOptionEquals "db_incluster" "0") (ConfigOptionEquals "db_cloudsql_enabled" "1") }}' = "true" ];
               then
                 echo "Gitpod: configuring CloudSQLProxy"
