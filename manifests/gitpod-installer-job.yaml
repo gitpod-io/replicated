@@ -162,6 +162,7 @@ spec:
               fi
 
               echo "Gitpod: Generate the Kubernetes objects and apply"
+              cat "${CONFIG_FILE}"
               /app/installer render -c "${CONFIG_FILE}" --namespace {{repl Namespace }} | kubectl apply -f -
 
               echo "Gitpod: Delete Installer resources - prevents the elevated privileges being used and abused"
