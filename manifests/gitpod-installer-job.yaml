@@ -42,18 +42,22 @@ spec:
               echo "Gitpod: Release found - goodbye"
       containers:
         - name: installer
-          # Normally, this would be a release but this has additions for Replicated from 2022.01
-          image: eu.gcr.io/gitpod-core-dev/build/installer:main.2316
+          image: eu.gcr.io/gitpod-core-dev/build/installer:main.2499
           volumeMounts:
             - mountPath: /config
               name: config
               readOnly: false
+            - mountPath: /config-patch
+              name: config-patch
+              readOnly: true
             - mountPath: /mnt/node0
               name: node-fs0
               readOnly: true
           env:
             - name: CONFIG_FILE
               value: /config/config.yaml
+            - name: CONFIG_PATCH_FILE
+              value: /config-patch/gitpod-config-patch.yaml
             - name: CONTAINERD_DIR_K3S
               value: /run/k3s/containerd/io.containerd.runtime.v2.task/k8s.io
             - name: CONTAINERD_SOCKET_K3S
@@ -85,9 +89,6 @@ spec:
               yq e -i '.domain = "{{repl ConfigOption "domain" }}"' "${CONFIG_FILE}"
               yq e -i '.license.kind = "secret"' "${CONFIG_FILE}"
               yq e -i '.license.name = "gitpod-license"' "${CONFIG_FILE}"
-
-              # TODO
-              yq e -i '.workspace.runtime.fsShiftMethod = "fuse"' "${CONFIG_FILE}"
 
               if [ '{{repl and (ConfigOptionEquals "db_incluster" "0") (ConfigOptionEquals "db_cloudsql_enabled" "1") }}' = "true" ];
               then
@@ -164,12 +165,19 @@ spec:
               echo "Gitpod: Generate SSH host key"
               apk update && apk add --no-cache openssh-keygen     # TODO: Move installation of openssh-keygen to installer image
               ssh-keygen -t rsa -q -N "" -f host.key
-              kubectl create secret generic ssh-gateway-host-key --from-file=host.key -n {{repl Namespace }}
-              yq e -i ".sshGatewayHostKey.kind = "\secret\"" "${CONFIG_FILE}"
-              yq e -i ".sshGatewayHostKey.name = "\ssh-gateway-host-key\"" "${CONFIG_FILE}"
+              kubectl create secret generic ssh-gateway-host-key --from-file=host.key -n {{repl Namespace }} || echo "SSH Gateway Host Key secret has not been created. Does it exist already?"
+              #yq e -i '.sshGatewayHostKey.kind =  "secret"' "${CONFIG_FILE}"
+              #yq e -i '.sshGatewayHostKey.name = "ssh-gateway-host-key"' "${CONFIG_FILE}"
+
+              echo "Gitpod: Patch Gitpod config"
+              base64 -d "${CONFIG_PATCH_FILE}" > patch.yaml
+              config_patch=$(cat patch.yaml)
+              echo "Gitpod: ${CONFIG_PATCH_FILE}=${config_patch}"
+              yq eval-all --inplace 'select(fileIndex == 0) * select(fileIndex == 1)' "${CONFIG_FILE}" patch.yaml
 
               echo "Gitpod: Generate the Kubernetes objects and apply"
-              cat "${CONFIG_FILE}"
+              config=$(cat "${CONFIG_FILE}")
+              echo "Gitpod: ${CONFIG_FILE}=${config}"
               /app/installer render -c "${CONFIG_FILE}" --namespace {{repl Namespace }} | kubectl apply -f -
 
               echo "Gitpod: Delete Installer resources - prevents the elevated privileges being used and abused"
@@ -179,6 +187,9 @@ spec:
       volumes:
         - name: config
           emptyDir: {}
+        - name: config-patch
+          configMap:
+            name: gitpod-config-patch
         - name: node-fs0
           hostPath:
             path: /
