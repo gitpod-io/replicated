@@ -17,7 +17,7 @@ spec:
         component: gitpod-installer
     spec:
       serviceAccountName: installer
-      restartPolicy: OnFailure
+      restartPolicy: Never
       initContainers:
         # Checks that the cert-manager installation is complete
         - name: cert-manager
