@@ -263,7 +263,7 @@ spec:
         - name: cert_manager_email
           title: Email address
           type: text
-          required: true
+          required: false
           when: '{{repl ConfigOptionEquals "cert_manager_enabled" "1" }}'
           help_text: The email address to send renewal notifications to.
 
