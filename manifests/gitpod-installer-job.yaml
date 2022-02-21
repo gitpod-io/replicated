@@ -161,6 +161,13 @@ spec:
                 fi
               fi
 
+              echo "Gitpod: Generate SSH host key"
+              apk update && apk add --no-cache openssh-keygen     # TODO: Move installation of openssh-keygen to installer image
+              ssh-keygen -t rsa -q -N "" -f host.key
+              kubectl create secret generic ssh-gateway-host-key --from-file=host.key -n {{repl Namespace }}
+              yq e -i ".sshGatewayHostKey.kind = "\secret\"" "${CONFIG_FILE}"
+              yq e -i ".sshGatewayHostKey.name = "\ssh-gateway-host-key\"" "${CONFIG_FILE}"
+
               echo "Gitpod: Generate the Kubernetes objects and apply"
               cat "${CONFIG_FILE}"
               /app/installer render -c "${CONFIG_FILE}" --namespace {{repl Namespace }} | kubectl apply -f -
