@@ -44,9 +44,6 @@ spec:
         - name: installer
           image: eu.gcr.io/gitpod-core-dev/build/installer:main.2499
           volumeMounts:
-            - mountPath: /config
-              name: config
-              readOnly: false
             - mountPath: /config-patch
               name: config-patch
               readOnly: true
@@ -55,7 +52,7 @@ spec:
               readOnly: true
           env:
             - name: CONFIG_FILE
-              value: /config/config.yaml
+              value: gitpod-config.yaml
             - name: CONFIG_PATCH_FILE
               value: /config-patch/gitpod-config-patch.yaml
             - name: CONTAINERD_DIR_K3S
@@ -185,8 +182,6 @@ spec:
 
               echo "Gitpod: Installer job finished - goodbye"
       volumes:
-        - name: config
-          emptyDir: {}
         - name: config-patch
           configMap:
             name: gitpod-config-patch
