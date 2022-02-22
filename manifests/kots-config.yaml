@@ -323,6 +323,15 @@ spec:
           when: '{{repl ConfigOptionEquals "cert_manager_enabled" "0" }}'
           help_text: A file containing the TLS private key.
 
+    - name: features
+      title: Additional features
+      items:
+        - name: ssh_gateway
+          title: Allow to login to your workspace via SSH
+          type: bool
+          default: "0"
+          help_text: "This is required when you want to use deskop IDEs. **Attention:** This uses port 22 on your Kubernetes nodes. When you enable this, you cannot log in to your nodes using SSH anymore if your SSH daemon is listening on that port. You need to configure SSH to use another port."
+
     - name: advanced
       title: Advanced Customizations (Expert Mode)
       description: Use with care! Enable only when you know what you are doing!
